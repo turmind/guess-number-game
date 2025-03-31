@@ -51,7 +51,7 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 	mu.Lock()
 	if serverFull {
 		mu.Unlock()
-		http.Error(w, "游戏已满", http.StatusServiceUnavailable)
+		http.Error(w, "Game is full", http.StatusServiceUnavailable)
 		return
 	}
 
@@ -66,11 +66,11 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 	if waitingPlayer == nil {
 		waitingPlayer = player
 		mu.Unlock()
-		conn.WriteJSON(Message{Type: "waiting", Message: "等待其他玩家加入..."})
+		conn.WriteJSON(Message{Type: "waiting", Message: "Waiting for another player..."})
 		return
 	}
 
-	// 创建新游戏
+	// Create new game
 	game := &Game{
 		players:    [2]*Player{waitingPlayer, player},
 		targetNum:  rand.Intn(100) + 1,
@@ -82,17 +82,17 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 	serverFull = true
 	mu.Unlock()
 
-	log.Printf("新游戏开始！目标数字: %d, 玩家 %d 先手", game.targetNum, game.currentIdx)
+	log.Printf("Game started! Target number: %d, Player %d goes first", game.targetNum, game.currentIdx)
 
-	// 通知游戏开始
+	// Notify game start
 	for i, p := range game.players {
 		p.conn.WriteJSON(Message{
 			Type:    "start",
-			Message: fmt.Sprintf("游戏开始！%s", map[bool]string{true: "你是先手", false: "对手先手"}[i == game.currentIdx]),
+			Message: fmt.Sprintf("Game started! %s", map[bool]string{true: "It's your turn", false: "Opponent's turn"}[i == game.currentIdx]),
 		})
 	}
 
-	// 开始游戏
+	// Start game
 	game.run()
 }
 
@@ -119,28 +119,29 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 	defer g.mu.Unlock()
 
 	if playerIdx != g.currentIdx {
-		g.players[playerIdx].conn.WriteJSON(Message{Type: "error", Message: "不是你的回合"})
+		g.players[playerIdx].conn.WriteJSON(Message{Type: "error", Message: "Not your turn"})
 		return
 	}
 
 	if guess < g.minNumber || guess > g.maxNumber {
-		g.players[playerIdx].conn.WriteJSON(Message{Type: "error", Message: "猜测的数字超出范围"})
+		g.players[playerIdx].conn.WriteJSON(Message{Type: "error", Message: "Number out of valid range"})
 		return
 	}
 
 	if guess == g.targetNum {
-		log.Printf("游戏结束！目标数字: %d, 玩家 %d 猜中并输掉了游戏", g.targetNum, playerIdx)
+		log.Printf("Game over! Target number: %d, Player %d guessed it and lost", g.targetNum, playerIdx)
 		for i, p := range g.players {
 			p.conn.WriteJSON(Message{
 				Type:    "end",
-				Message: fmt.Sprintf("游戏结束！正确数字是：%d。%s", g.targetNum, map[bool]string{true: "你赢了！", false: "你输了！"}[i != playerIdx]),
+				Message: fmt.Sprintf("Game over! The number was: %d. %s", g.targetNum, map[bool]string{true: "You win!", false: "You lose!"}[i != playerIdx]),
 			})
 		}
 		g.close()
+		log.Println("Game finished, server exiting")
 		os.Exit(0)
 	}
 
-	// 更新范围并切换玩家
+	// Update range and switch player
 	if guess < g.targetNum {
 		g.minNumber = guess + 1
 	} else {
@@ -148,11 +149,11 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 	}
 	g.currentIdx = 1 - g.currentIdx
 
-	// 通知结果
+	// Send result
 	for i, p := range g.players {
 		p.conn.WriteJSON(Message{
 			Type:    "update",
-			Message: fmt.Sprintf("可猜测范围：%d-%d。%s", g.minNumber, g.maxNumber, map[bool]string{true: "轮到你猜测", false: "等待对手猜测"}[i == g.currentIdx]),
+			Message: fmt.Sprintf("Valid range: %d-%d. %s", g.minNumber, g.maxNumber, map[bool]string{true: "It's your turn", false: "Opponent's turn"}[i == g.currentIdx]),
 		})
 	}
 }
@@ -161,15 +162,16 @@ func (g *Game) handleDisconnect(playerIdx int) {
 	g.mu.Lock()
 	defer g.mu.Unlock()
 
-	log.Printf("玩家 %d 断开连接", playerIdx)
+	log.Printf("Player %d disconnected", playerIdx)
 	otherIdx := 1 - playerIdx
 	if g.players[otherIdx] != nil {
 		g.players[otherIdx].conn.WriteJSON(Message{
 			Type:    "end",
-			Message: "对手已断开连接，你赢了！",
+			Message: "Opponent disconnected. You win!",
 		})
 	}
 	g.close()
+	log.Println("Player disconnected, server exiting")
 	os.Exit(0)
 }
 
