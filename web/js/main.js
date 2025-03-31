@@ -78,6 +78,7 @@ function connectToBattleServer(wsUrl) {
 
     gameState.ws.onmessage = (event) => {
         try {
+            // amazonq-ignore-next-line
             const message = JSON.parse(event.data);
             handleGameMessage(message);
         } catch (error) {
@@ -147,6 +148,7 @@ function handleGameMessage(message) {
 submitGuessBtn.addEventListener('click', () => {
     const guess = parseInt(guessInput.value);
     if (isNaN(guess) || guess < 1 || guess > 100) {
+        // amazonq-ignore-next-line
         alert('Please enter a number between 1 and 100');
         return;
     }

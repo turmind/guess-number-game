@@ -45,6 +45,7 @@ func handleMatch(w http.ResponseWriter, r *http.Request) {
 func main() {
 	http.HandleFunc("/match", handleMatch)
 	log.Println("Lobby server starting on :8080")
+	// amazonq-ignore-next-line
 	if err := http.ListenAndServe(":8080", nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}

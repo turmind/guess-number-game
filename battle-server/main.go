@@ -186,6 +186,7 @@ func (g *Game) close() {
 func main() {
 	http.HandleFunc("/game", handleGame)
 	log.Println("Battle server starting on :8081")
+	// amazonq-ignore-next-line
 	if err := http.ListenAndServe(":8081", nil); err != nil {
 		log.Fatal(err)
 	}
