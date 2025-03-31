@@ -1,11 +1,11 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
-	"os"
 	"sync"
 	"time"
 
@@ -137,8 +137,10 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 			})
 		}
 		g.close()
-		log.Println("Game finished, server exiting")
-		os.Exit(0)
+		log.Println("Game finished, resetting server state")
+		mu.Lock()
+		serverFull = false
+		mu.Unlock()
 	}
 
 	// Update range and switch player
@@ -171,8 +173,10 @@ func (g *Game) handleDisconnect(playerIdx int) {
 		})
 	}
 	g.close()
-	log.Println("Player disconnected, server exiting")
-	os.Exit(0)
+	log.Println("Player disconnected, resetting server state")
+	mu.Lock()
+	serverFull = false
+	mu.Unlock()
 }
 
 func (g *Game) close() {
@@ -184,10 +188,13 @@ func (g *Game) close() {
 }
 
 func main() {
+	port := flag.Int("port", 8081, "Port to run the battle server on")
+	flag.Parse()
+
 	http.HandleFunc("/game", handleGame)
-	log.Println("Battle server starting on :8081")
-	// amazonq-ignore-next-line
-	if err := http.ListenAndServe(":8081", nil); err != nil {
+	addr := fmt.Sprintf(":%d", *port)
+	log.Printf("Battle server starting on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal(err)
 	}
 }

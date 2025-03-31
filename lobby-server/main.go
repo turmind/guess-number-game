@@ -2,11 +2,13 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 )
 
-const battleServerURL = "ws://localhost:8081/game"
+var battleServerURL string
 
 type MatchResponse struct {
 	WsUrl string `json:"wsUrl"`
@@ -43,10 +45,16 @@ func handleMatch(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+	port := flag.Int("port", 8080, "Port to run the lobby server on")
+	battlePort := flag.Int("battle-port", 8081, "Port of the battle server")
+	flag.Parse()
+
+	battleServerURL = fmt.Sprintf("ws://localhost:%d/game", *battlePort)
+
 	http.HandleFunc("/match", handleMatch)
-	log.Println("Lobby server starting on :8080")
-	// amazonq-ignore-next-line
-	if err := http.ListenAndServe(":8080", nil); err != nil {
+	addr := fmt.Sprintf(":%d", *port)
+	log.Printf("Lobby server starting on %s", addr)
+	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
 }
