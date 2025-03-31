@@ -1,8 +1,23 @@
-// Constants
-const LOBBY_SERVER = 'http://localhost:8080';
-
 // DOM Elements
+const lobbyServerInput = document.getElementById('lobbyServer');
+const saveConfigBtn = document.getElementById('saveConfig');
 const startGameBtn = document.getElementById('startGame');
+
+// Load saved lobby server address or use default
+const DEFAULT_LOBBY_SERVER = 'http://localhost:8080';
+let lobbyServer = localStorage.getItem('lobbyServer') || DEFAULT_LOBBY_SERVER;
+lobbyServerInput.value = lobbyServer;
+
+// Save server configuration
+saveConfigBtn.addEventListener('click', () => {
+    const newAddress = lobbyServerInput.value.trim();
+    if (newAddress) {
+        lobbyServer = newAddress;
+        localStorage.setItem('lobbyServer', lobbyServer);
+        updateStatus('Server configuration saved');
+    }
+});
+
 const gameStatus = document.getElementById('gameStatus');
 const gameArea = document.getElementById('gameArea');
 const guessInput = document.getElementById('guessInput');
@@ -46,7 +61,7 @@ startGameBtn.addEventListener('click', async () => {
     resetGame();
 
     try {
-        const response = await fetch(`${LOBBY_SERVER}/match`);
+        const response = await fetch(`${lobbyServer}/match`);
         if (!response.ok) {
             throw new Error('Matchmaking server error');
         }

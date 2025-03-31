@@ -71,6 +71,13 @@ h1 {
     color: #333;
 }
 
+.server-config {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin: 20px 0;
+}
+
 .input-area {
     display: flex;
     justify-content: center;
@@ -86,7 +93,16 @@ input[type="number"] {
     font-size: 16px;
 }
 
-#submitGuess {
+input[type="text"] {
+    width: 300px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+#submitGuess,
+#saveConfig {
     width: auto;
     margin: 0;
 }

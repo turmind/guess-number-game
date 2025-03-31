@@ -9,6 +9,10 @@
 <body>
     <div class="container">
         <h1>Number Guessing Game</h1>
+        <div class="server-config">
+            <input type="text" id="lobbyServer" placeholder="Lobby Server Address" value="http://localhost:8080">
+            <button id="saveConfig" class="btn">Set Lobby Server Address</button>
+        </div>
         <div id="gameStatus" class="status">Waiting to start...</div>
         <button id="startGame" class="btn">Start Game</button>
         <div id="gameArea" class="game-area hidden">
