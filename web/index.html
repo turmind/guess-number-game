@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>猜数字游戏</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>猜数字游戏</h1>
+        <div id="gameStatus" class="status">等待开始游戏...</div>
+        <button id="startGame" class="btn">开始游戏</button>
+        <div id="gameArea" class="game-area hidden">
+            <div id="range" class="range">可猜测范围：1-100</div>
+            <div class="input-area">
+                <input type="number" id="guessInput" min="1" max="100" placeholder="输入你的猜测">
+                <button id="submitGuess" class="btn">提交</button>
+            </div>
+        </div>
+    </div>
+    <script src="js/main.js"></script>
+</body>
+</html>
