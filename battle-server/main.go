@@ -6,6 +6,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"sync"
 	"time"
 
@@ -137,10 +138,11 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 			})
 		}
 		g.close()
-		log.Println("Game finished, resetting server state")
+		log.Println("Game finished, exiting server")
 		mu.Lock()
 		serverFull = false
 		mu.Unlock()
+		os.Exit(0)
 	}
 
 	// Update range and switch player
@@ -173,10 +175,11 @@ func (g *Game) handleDisconnect(playerIdx int) {
 		})
 	}
 	g.close()
-	log.Println("Player disconnected, resetting server state")
+	log.Println("Player disconnected, exiting server")
 	mu.Lock()
 	serverFull = false
 	mu.Unlock()
+	os.Exit(0)
 }
 
 func (g *Game) close() {
