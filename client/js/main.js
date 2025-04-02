@@ -144,7 +144,15 @@ function handleGameMessage(message) {
 
         case 'end':
             gameState.gameOver = true;
-            updateStatus(message.message);
+            if (message.message.includes('You win!')) {
+                updateStatus('🎉 ' + message.message + ' 🎉');
+                gameStatus.style.color = '#2ecc71';
+                gameStatus.style.fontSize = '24px';
+                gameStatus.style.fontWeight = 'bold';
+            } else {
+                updateStatus(message.message);
+                gameStatus.style.color = '#e74c3c';
+            }
             gameArea.classList.add('hidden');
             startGameBtn.disabled = false;
             break;

@@ -130,11 +130,11 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 	}
 
 	if guess == g.targetNum {
-		log.Printf("Game over! Target number: %d, Player %d guessed it and lost", g.targetNum, playerIdx)
+		log.Printf("Game over! Target number: %d, Player %d guessed it and won!", g.targetNum, playerIdx)
 		for i, p := range g.players {
 			p.conn.WriteJSON(Message{
 				Type:    "end",
-				Message: fmt.Sprintf("Game over! The number was: %d. %s", g.targetNum, map[bool]string{true: "You win!", false: "You lose!"}[i != playerIdx]),
+				Message: fmt.Sprintf("Game over! The number was: %d. %s", g.targetNum, map[bool]string{true: "You win!", false: "You lose!"}[i == playerIdx]),
 			})
 		}
 		g.close()
