@@ -217,6 +217,8 @@ submitGuessBtn.addEventListener('click', () => {
     if (isNaN(guess) || guess < 1 || guess > 100) {
         // amazonq-ignore-next-line
         alert('Please enter a number between 1 and 100');
+        guessInput.value = '';
+        setGuessInputEnabled(true);
         return;
     }
 
