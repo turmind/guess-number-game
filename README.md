@@ -1,40 +1,40 @@
 # Number Guessing Game
 
-A simple online two-player number guessing game. The game randomly generates a number between 1-100, and players take turns guessing. The player who guesses the correct number loses.
+A simple online two-player number guessing game. The game randomly generates a number between 1-100, and players take turns guessing. Unique twist: The player who guesses the correct number loses!
 
 ## Project Structure
 
 ```
 guess-number-game/
-├── web/                  # Frontend static files
+├── client/               # Frontend static files
 │   ├── index.html       # Main page
 │   ├── css/            
 │   │   └── style.css   # Styles
 │   └── js/
 │       └── main.js     # Frontend logic
-├── lobby-server/         # Lobby server
+├── lobby-server/         # Lobby server (port 8080)
 │   ├── main.go         # Returns battle server address
 │   └── go.mod          # Go module file
-└── battle-server/        # Battle server
+└── battle-server/        # Battle server (port 8081)
     ├── main.go         # Game logic
     └── go.mod          # Go module file
 ```
 
 ## Running Instructions
 
-1. Start the battle server:
+1. Start the battle server (runs on port 8081):
 ```bash
 cd battle-server
 go run main.go
 ```
 
-2. Start the lobby server:
+2. Start the lobby server (runs on port 8080):
 ```bash
 cd lobby-server
 go run main.go
 ```
 
-3. Deploy the web directory using nginx
+3. Deploy the client directory using nginx or simply open index.html in a browser
 
 ## Communication Protocol
 
@@ -73,13 +73,15 @@ Message types:
 1. Open the game page, click "Start Game" to enter matchmaking
 2. Wait for another player to join
 3. Game starts with a randomly chosen first player
-4. When it's your turn, enter your guess
-5. After each guess, the valid range is updated
-6. The player who guesses the target number loses
-7. If opponent disconnects, remaining player wins
+4. When it's your turn, enter your guess (1-100)
+5. After each guess, the valid range is updated to help players
+6. Strategy is key: The player who guesses the target number LOSES!
+7. If opponent disconnects, remaining player wins automatically
 
-## Notes
+## Technical Notes
 
-- Battle server only allows two players
-- Server exits after game ends
-- Restart battle server to start a new game
+- Battle server runs on WebSocket port 8081
+- Lobby server runs on HTTP port 8080
+- Battle server only allows two players per game
+- Server automatically exits after game ends
+- Restart battle server to start a new game session
