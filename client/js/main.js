@@ -65,12 +65,56 @@ startGameBtn.addEventListener('click', async () => {
         if (!response.ok) {
             throw new Error('Matchmaking server error');
         }
-        const data = await response.json();
-        
-        if (data.wsUrl) {
-            connectToBattleServer(data.wsUrl);
-        } else {
-            throw new Error('Invalid server address');
+
+        // Create a reader to handle multiple JSON responses
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = '';
+
+        while (true) {
+            const {value, done} = await reader.read();
+            if (done) break;
+            
+            buffer += decoder.decode(value, {stream: true});
+            
+            // Process complete JSON objects
+            const lines = buffer.split('\n');
+            buffer = lines.pop() || ''; // Keep the incomplete line in buffer
+            
+            for (const line of lines) {
+                if (!line.trim()) continue; // Skip empty lines
+                
+                try {
+                    const data = JSON.parse(line);
+                    
+                    switch (data.status) {
+                        case 'waiting':
+                            updateStatus(data.message);
+                            break;
+                            
+                        case 'matched':
+                            updateStatus(data.message);
+                            if (data.wsUrl) {
+                                // Short delay to show the "opponent found" message
+                                setTimeout(() => connectToBattleServer(data.wsUrl), 1000);
+                                return; // Exit the polling loop
+                            } else {
+                                throw new Error('Invalid server address');
+                            }
+                            
+                        case 'timeout':
+                            updateStatus(data.message);
+                            startGameBtn.disabled = false;
+                            return; // Exit the polling loop
+                            
+                        default:
+                            throw new Error('Invalid response from server');
+                    }
+                } catch (parseError) {
+                    console.error('Parse error:', parseError);
+                    // Continue to next line if this one is invalid
+                }
+            }
         }
     } catch (error) {
         console.error('Error:', error);
