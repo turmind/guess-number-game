@@ -1,4 +1,4 @@
-module lobby-server-gamelift-anywhere
+module lobby-server-gamelift
 
 go 1.22.5
 
