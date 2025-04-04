@@ -100,7 +100,17 @@ func match(w http.ResponseWriter, r *http.Request) {
 
 		// Wait for second player or timeout
 		select {
-		case gameSession := <-waitingPlayer:
+		case gameSession, ok := <-waitingPlayer:
+			if !ok {
+				// Channel was closed due to error
+				if err := json.NewEncoder(w).Encode(MatchResponse{
+					Status:  "error",
+					Message: "Failed to create game session",
+				}); err != nil {
+					log.Printf("Error sending error response to first player: %v", err)
+				}
+				return
+			}
 			// Send battle server URL
 			wsUrl := fmt.Sprintf("ws://%s:%d/game", *gameSession.IpAddress, *gameSession.Port)
 			if err := json.NewEncoder(w).Encode(MatchResponse{
@@ -132,17 +142,24 @@ func match(w http.ResponseWriter, r *http.Request) {
 		gameSession, err := createGameSession(r.Context())
 		if err != nil {
 			log.Printf("Error creating game session: %v", err)
+			// Close channel to notify waiting player about error
+			close(waitingPlayer)
+			waitingPlayer = nil
+			matchMutex.Unlock()
+
+			// Send error response to second player
 			if err := json.NewEncoder(w).Encode(MatchResponse{
 				Status:  "error",
 				Message: "Failed to create game session",
 			}); err != nil {
-				log.Printf("Error sending error response: %v", err)
+				log.Printf("Error sending error response to second player: %v", err)
 			}
 			return
 		}
 
-		// Send game session to waiting player
+		// Send game session to waiting player and close channel
 		waitingPlayer <- gameSession
+		close(waitingPlayer)
 		waitingPlayer = nil
 		matchMutex.Unlock()
 

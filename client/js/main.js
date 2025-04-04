@@ -107,6 +107,11 @@ startGameBtn.addEventListener('click', async () => {
                             startGameBtn.disabled = false;
                             return; // Exit the polling loop
                             
+                        case 'error':
+                            updateStatus(data.message);
+                            startGameBtn.disabled = false;
+                            return; // Exit the polling loop
+                            
                         default:
                             throw new Error('Invalid response from server');
                     }
