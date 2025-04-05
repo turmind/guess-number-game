@@ -55,14 +55,18 @@ func createGameSession(ctx context.Context) (*types.GameSession, error) {
 		},
 	}
 
-	log.Printf("Creating game session with input: %+v", input)
+	log.Printf("Creating game session in fleet %s at location %s", *input.FleetId, *input.Location)
 	result, err := gameLiftClient.CreateGameSession(ctx, input)
 	if err != nil {
 		log.Printf("Error creating game session: %v", err)
 		return nil, fmt.Errorf("failed to create game session: %v", err)
 	}
 
-	log.Printf("Game session created successfully: %+v", result.GameSession)
+	log.Printf("Game session created successfully - ID: %s, Status: %s, IP: %s, Port: %d",
+		*result.GameSession.GameSessionId,
+		result.GameSession.Status,
+		*result.GameSession.IpAddress,
+		*result.GameSession.Port)
 	return result.GameSession, nil
 }
 
