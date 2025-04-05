@@ -30,12 +30,81 @@ type Game struct {
 	maxNumber  int
 	currentIdx int
 	mu         sync.Mutex
+	isEven     int
+	sum        int
+	isPrime    int
 }
 
 type Message struct {
 	Type    string `json:"type"`
 	Number  int    `json:"number,omitempty"`
 	Message string `json:"message,omitempty"`
+	IsEven  int    `json:"isEven"`
+	Sum     int    `json:"sum"`
+	IsPrime int    `json:"isPrime"`
+}
+
+func isPrime(n int) bool {
+	if n <= 1 {
+		return false
+	}
+	for i := 2; i*i <= n; i++ {
+		if n%i == 0 {
+			return false
+		}
+	}
+	return true
+}
+
+func sumDigits(n int) int {
+	sum := 0
+	for n > 0 {
+		sum += n % 10
+		n /= 10
+	}
+	return sum
+}
+
+func getHints(num int) (int, int, int) {
+	// Calculate all properties
+	isEvenVal := 0
+	if num%2 == 0 {
+		isEvenVal = 1
+	}
+
+	sumVal := sumDigits(num)
+
+	isPrimeVal := 0
+	if isPrime(num) {
+		isPrimeVal = 1
+	}
+
+	// Randomly select 1-2 hints to show
+	hints := []int{0, 1, 2} // 0: isEven, 1: sum, 2: isPrime
+	rand.Shuffle(len(hints), func(i, j int) { hints[i], hints[j] = hints[j], hints[i] })
+
+	numHints := rand.Intn(2) + 1 // Random number between 1 and 2
+	selectedHints := make(map[int]bool)
+	for i := 0; i < numHints; i++ {
+		selectedHints[hints[i]] = true
+	}
+
+	// Set values based on selection
+	isEven := -1
+	sum := -1
+	isPrime := -1
+
+	if selectedHints[0] {
+		isEven = isEvenVal
+	}
+	if selectedHints[1] {
+		sum = sumVal
+	}
+	if selectedHints[2] {
+		isPrime = isPrimeVal
+	}
+
+	return isEven, sum, isPrime
 }
 
 var (
@@ -71,13 +140,19 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	targetNum := rand.Intn(100) + 1
+	isEven, sum, isPrime := getHints(targetNum)
+
 	// Create new game
 	game := &Game{
 		players:    [2]*Player{waitingPlayer, player},
-		targetNum:  rand.Intn(100) + 1,
+		targetNum:  targetNum,
 		minNumber:  1,
 		maxNumber:  100,
 		currentIdx: rand.Intn(2),
+		isEven:     isEven,
+		sum:        sum,
+		isPrime:    isPrime,
 	}
 	waitingPlayer = nil
 	serverFull = true
@@ -90,6 +165,9 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 		p.conn.WriteJSON(Message{
 			Type:    "start",
 			Message: fmt.Sprintf("Game started! %s", map[bool]string{true: "It's your turn", false: "Opponent's turn"}[i == game.currentIdx]),
+			IsEven:  isEven,
+			Sum:     sum,
+			IsPrime: isPrime,
 		})
 	}
 
@@ -153,11 +231,14 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 	}
 	g.currentIdx = 1 - g.currentIdx
 
-	// Send result
+	// Send result with stored hints
 	for i, p := range g.players {
 		p.conn.WriteJSON(Message{
 			Type:    "update",
 			Message: fmt.Sprintf("Valid range: %d-%d. %s", g.minNumber, g.maxNumber, map[bool]string{true: "It's your turn", false: "Opponent's turn"}[i == g.currentIdx]),
+			IsEven:  g.isEven,
+			Sum:     g.sum,
+			IsPrime: g.isPrime,
 		})
 	}
 }

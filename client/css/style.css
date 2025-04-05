@@ -71,6 +71,20 @@ h1 {
     color: #333;
 }
 
+.hints {
+    text-align: center;
+    margin: 15px 0;
+    padding: 10px;
+    background-color: #e3f2fd;
+    border-radius: 4px;
+    color: #1976d2;
+    font-size: 16px;
+}
+
+.hints p {
+    margin: 5px 0;
+}
+
 .server-config {
     display: flex;
     justify-content: center;

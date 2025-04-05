@@ -165,6 +165,38 @@ function connectToBattleServer(wsUrl) {
 }
 
 // Handle game messages
+function displayHints(message) {
+    const hintsDiv = document.getElementById('hints');
+    const hints = [];
+
+    // Display all non-negative hints
+    if (message.isEven !== undefined && message.isEven !== -1) {
+        if (message.isEven === 1) {
+            hints.push('This is an even number');
+        } else if (message.isEven === 0) {
+            hints.push('This is an odd number');
+        }
+    }
+
+    if (message.sum !== undefined && message.sum !== -1) {
+        hints.push(`Sum of digits is: ${message.sum}`);
+    }
+
+    if (message.isPrime !== undefined && message.isPrime !== -1) {
+        if (message.isPrime === 1) {
+            hints.push('This is a prime number');
+        } else if (message.isPrime === 0) {
+            hints.push('This is not a prime number');
+        }
+    }
+
+    if (hints.length > 0) {
+        hintsDiv.innerHTML = hints.map(hint => `<p>${hint}</p>`).join('');
+    } else {
+        hintsDiv.innerHTML = '';
+    }
+}
+
 function handleGameMessage(message) {
     switch (message.type) {
         case 'waiting':
@@ -178,6 +210,7 @@ function handleGameMessage(message) {
             rangeDisplay.textContent = 'Valid range: 1-100';
             gameState.canGuess = message.message.includes('your turn');
             setGuessInputEnabled(gameState.canGuess);
+            displayHints(message);
             break;
 
         case 'update':
@@ -189,6 +222,7 @@ function handleGameMessage(message) {
             }
             gameState.canGuess = message.message.includes('your turn');
             setGuessInputEnabled(gameState.canGuess);
+            displayHints(message);
             break;
 
         case 'end':
