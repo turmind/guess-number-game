@@ -37,32 +37,6 @@ type MatchResponse struct {
 	WsUrl   string `json:"wsUrl,omitempty"`
 }
 
-func createPlayerSessions(ctx context.Context, gameSessionID string, playerIDs []string) error {
-	input := &gamelift.CreatePlayerSessionsInput{
-		GameSessionId: &gameSessionID,
-		PlayerIds:     playerIDs,
-		PlayerDataMap: map[string]string{
-			"playerType": "regular",
-			"gameMode":   "standard",
-		},
-	}
-
-	log.Printf("Creating player sessions for game session %s with players %v", gameSessionID, playerIDs)
-	result, err := gameLiftClient.CreatePlayerSessions(ctx, input)
-	if err != nil {
-		log.Printf("Error creating player sessions: %v", err)
-		return fmt.Errorf("failed to create player sessions: %v", err)
-	}
-
-	for _, ps := range result.PlayerSessions {
-		log.Printf("Player session created - ID: %s, PlayerID: %s, Status: %s",
-			*ps.PlayerSessionId,
-			*ps.PlayerId,
-			ps.Status)
-	}
-	return nil
-}
-
 func setCORS(w http.ResponseWriter) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Methods", "GET, OPTIONS")
@@ -125,7 +99,7 @@ func match(w http.ResponseWriter, r *http.Request) {
 		waitingPlayer = make(chan *types.GameSession)
 		matchMutex.Unlock()
 
-		// Send waiting response with player ID and ensure it's flushed
+		// Send waiting response ensure it's flushed
 		if err := json.NewEncoder(w).Encode(MatchResponse{
 			Status:  "waiting",
 			Message: "Waiting for opponent...",
@@ -149,22 +123,6 @@ func match(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 			// Send battle server URL
-			// Create player sessions for both players with random IDs
-			playerIDs := []string{
-				fmt.Sprintf("player-%d", time.Now().UnixNano()),
-				fmt.Sprintf("player-%d", time.Now().UnixNano()+1),
-			}
-			if err := createPlayerSessions(r.Context(), *gameSession.GameSessionId, playerIDs); err != nil {
-				log.Printf("Error creating player sessions: %v", err)
-				if err := json.NewEncoder(w).Encode(MatchResponse{
-					Status:  "error",
-					Message: "Failed to create player sessions",
-				}); err != nil {
-					log.Printf("Error sending error response: %v", err)
-				}
-				return
-			}
-
 			wsUrl := fmt.Sprintf("ws://%s:%d/game", *gameSession.IpAddress, *gameSession.Port)
 			if err := json.NewEncoder(w).Encode(MatchResponse{
 				Status:  "matched",
