@@ -26,6 +26,7 @@ var (
 	matchMutex     sync.Mutex
 	gameLiftClient *gamelift.Client
 	fleetID        string
+	aliasID        string
 	awsRegion      string
 	location       string
 )
@@ -70,7 +71,6 @@ func setCORS(w http.ResponseWriter) {
 
 func createGameSession(ctx context.Context) (*types.GameSession, error) {
 	input := &gamelift.CreateGameSessionInput{
-		FleetId:                   &fleetID,
 		MaximumPlayerSessionCount: aws.Int32(2),
 		Location:                  &location,
 		GameProperties: []types.GameProperty{
@@ -81,7 +81,14 @@ func createGameSession(ctx context.Context) (*types.GameSession, error) {
 		},
 	}
 
-	log.Printf("Creating game session in fleet %s at location %s", *input.FleetId, *input.Location)
+	// Set either FleetId or AliasId, but not both
+	if fleetID != "" {
+		input.FleetId = &fleetID
+		log.Printf("Creating game session in fleet %s at location %s", fleetID, location)
+	} else {
+		input.AliasId = &aliasID
+		log.Printf("Creating game session with alias %s at location %s", aliasID, location)
+	}
 	result, err := gameLiftClient.CreateGameSession(ctx, input)
 	if err != nil {
 		log.Printf("Error creating game session: %v", err)
@@ -226,15 +233,18 @@ func match(w http.ResponseWriter, r *http.Request) {
 func main() {
 	port := flag.Int("port", defaultPort, "Port to run the lobby server on")
 	fleetIDFlag := flag.String("fleet-id", "", "AWS GameLift Fleet ID")
+	aliasIDFlag := flag.String("alias-id", "", "AWS GameLift Alias ID")
 	awsRegionFlag := flag.String("region", "ap-southeast-1", "AWS Region")
 	locationFlag := flag.String("location", "custom-location-1", "AWS GameLift Location")
 	flag.Parse()
 
-	if *fleetIDFlag == "" {
-		log.Fatal("Fleet ID is required")
+	// Validate that exactly one of fleet-id or alias-id is provided
+	if (*fleetIDFlag == "" && *aliasIDFlag == "") || (*fleetIDFlag != "" && *aliasIDFlag != "") {
+		log.Fatal("Exactly one of fleet-id or alias-id must be provided")
 	}
 
 	fleetID = *fleetIDFlag
+	aliasID = *aliasIDFlag
 	awsRegion = *awsRegionFlag
 	location = *locationFlag
 
@@ -252,8 +262,12 @@ func main() {
 	addr := fmt.Sprintf(":%d", *port)
 	http.HandleFunc("/match", match)
 
-	log.Printf("Lobby server starting on %s (Fleet ID: %s, Region: %s, Location: %s)",
-		addr, fleetID, awsRegion, location)
+	identifier := "Fleet ID: " + fleetID
+	if fleetID == "" {
+		identifier = "Alias ID: " + aliasID
+	}
+	log.Printf("Lobby server starting on %s (%s, Region: %s, Location: %s)",
+		addr, identifier, awsRegion, location)
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
