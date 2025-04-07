@@ -3,3 +3,5 @@ web/.DS_Store
 lobby-server-gamelift-anywhere/lobby-server-gamelift-anywhere
 tmp
 lobby-server-gamelift/lobby-server-gamelift-anywhere
+node_modules/
+dist/

@@ -1,0 +1,35 @@
+{
+  "name": "client-app",
+  "version": "1.0.0",
+  "description": "Number Guessing Game Client",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder build --mac --win",
+    "build:mac-arm64": "electron-builder build --mac --arm64",
+    "build:mac-x64": "electron-builder build --mac --x64",
+    "build:win-x64": "electron-builder build --win --x64"
+  },
+  "build": {
+    "appId": "com.numbergame.client",
+    "productName": "Number Guessing Game",
+    "mac": {
+      "category": "public.app-category.games",
+      "target": [
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "portable"
+      ]
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "electron": "^28.0.0",
+    "electron-builder": "^24.9.1"
+  }
+}
