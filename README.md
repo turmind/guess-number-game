@@ -12,6 +12,13 @@ guess-number-game/
 │   │   └── style.css   # Styles
 │   └── js/
 │       └── main.js     # Frontend logic
+├── client-app/          # Desktop application (Electron)
+│   ├── main.js         # Electron main process
+│   ├── src/            # Application source
+│   │   ├── index.html  # App main page
+│   │   ├── css/        # App styles
+│   │   └── js/         # App logic
+│   └── package.json    # Dependencies and scripts
 ├── lobby-server/         # Local lobby server (port 8080)
 │   ├── main.go         # Returns battle server address
 │   └── go.mod          # Go module file
@@ -40,7 +47,17 @@ cd lobby-server
 go run main.go
 ```
 
-3. Deploy the client directory using nginx or simply open index.html in a browser
+3. Choose your preferred client:
+
+   a. Web Client:
+   - Deploy the client directory using nginx or simply open index.html in a browser
+
+   b. Desktop Client:
+   ```bash
+   cd client-app
+   npm install
+   npm start
+   ```
 
 ### Using AWS GameLift Lobby Server
 
@@ -58,7 +75,7 @@ Required flags:
 - `--location`: GameLift location (default: custom-location-1)
 - Optional: `--port` to specify custom port (default: 8080)
 
-2. Deploy the client directory as mentioned above
+2. Start your preferred client as mentioned above
 
 ## Communication Protocol
 
@@ -117,22 +134,13 @@ Message types:
 3. Game starts with a randomly chosen first player
 4. When it's your turn, enter your guess (1-100)
 5. After each guess, the valid range is updated to help players
-6. Strategy is key: The player who guesses the target number LOSES!
+6. Strategy is key: The player who guesses the target number WIN!
 7. If opponent disconnects, remaining player wins automatically
 
 ## Technical Notes
 
-- Battle server runs on WebSocket port 8081
+- Native battle server runs on WebSocket port 8081
 - Both lobby servers run on HTTP port 8080 (configurable)
 - Battle server only allows two players per game
 - Server automatically exits after game ends
 - Restart battle server to start a new game session
-
-### GameLift Notes
-
-- Requires AWS credentials with GameLift permissions
-- Uses AWS GameLift for game session and player session management
-- Supports both fleet ID and alias ID configurations
-- Implements automatic player session creation
-- Includes CORS support for cross-origin requests
-- Handles matchmaking timeouts (180 seconds)
