@@ -12,11 +12,19 @@ body {
 
 .container {
     max-width: 600px;
-    margin: 50px auto;
-    padding: 20px;
+    margin: 20px auto;
+    padding: 15px;
     background-color: white;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+@media (max-width: 768px) {
+    .container {
+        max-width: 100%;
+        margin: 0;
+        border-radius: 0;
+    }
 }
 
 h1 {
@@ -90,6 +98,7 @@ h1 {
     justify-content: center;
     gap: 10px;
     margin: 20px 0;
+    flex-wrap: wrap;
 }
 
 .input-area {
@@ -97,11 +106,21 @@ h1 {
     justify-content: center;
     gap: 10px;
     margin-top: 20px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .server-config,
+    .input-area {
+        flex-direction: column;
+        align-items: center;
+        gap: 15px;
+    }
 }
 
 input[type="number"] {
     width: 150px;
-    padding: 8px;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 16px;
@@ -109,7 +128,7 @@ input[type="number"] {
 
 input[type="text"] {
     width: 300px;
-    padding: 8px;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 16px;
@@ -119,4 +138,36 @@ input[type="text"] {
 #saveConfig {
     width: auto;
     margin: 0;
+    min-height: 44px;
+}
+
+@media (max-width: 768px) {
+    input[type="number"],
+    input[type="text"] {
+        width: 100%;
+        max-width: 300px;
+    }
+
+    #submitGuess,
+    #saveConfig,
+    .btn {
+        width: 100%;
+        max-width: 300px;
+        padding: 12px 20px;
+        font-size: 18px;
+        margin: 10px auto;
+    }
+
+    h1 {
+        font-size: 24px;
+        margin: 15px 0;
+    }
+
+    .range {
+        font-size: 16px;
+    }
+
+    .hints {
+        font-size: 15px;
+    }
 }
