@@ -253,9 +253,16 @@ function handleGameMessage(message) {
 // Submit guess
 submitGuessBtn.addEventListener('click', () => {
     const guess = parseInt(guessInput.value);
-    if (isNaN(guess) || guess < 1 || guess > 100) {
+    
+    // Extract current valid range from rangeDisplay
+    const rangeText = rangeDisplay.textContent;
+    const rangeMatch = rangeText.match(/Valid range: (\d+)-(\d+)/);
+    const minRange = rangeMatch ? parseInt(rangeMatch[1]) : 1;
+    const maxRange = rangeMatch ? parseInt(rangeMatch[2]) : 100;
+    
+    if (isNaN(guess) || guess < minRange || guess > maxRange) {
         // amazonq-ignore-next-line
-        alert('Please enter a number between 1 and 100');
+        alert(`Please enter a number between ${minRange} and ${maxRange}`);
         guessInput.value = '';
         setGuessInputEnabled(true);
         return;
