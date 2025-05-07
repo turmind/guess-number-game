@@ -3,9 +3,15 @@ const lobbyServerInput = document.getElementById('lobbyServer');
 const saveConfigBtn = document.getElementById('saveConfig');
 const startGameBtn = document.getElementById('startGame');
 
-// Load saved lobby server address or use default
+// Function to get URL parameters
+function getUrlParam(param) {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get(param);
+}
+
+// Load lobby server address from URL, localStorage, or use default
 const DEFAULT_LOBBY_SERVER = 'http://localhost:8080';
-let lobbyServer = localStorage.getItem('lobbyServer') || DEFAULT_LOBBY_SERVER;
+let lobbyServer = getUrlParam('lobbyServer') || localStorage.getItem('lobbyServer') || DEFAULT_LOBBY_SERVER;
 lobbyServerInput.value = lobbyServer;
 
 // Save server configuration
