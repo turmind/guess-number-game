@@ -24,15 +24,17 @@ type Player struct {
 }
 
 type Game struct {
-	players    [2]*Player
-	targetNum  int
-	minNumber  int
-	maxNumber  int
-	currentIdx int
-	mu         sync.Mutex
-	isEven     int
-	sum        int
-	isPrime    int
+	players      [2]*Player
+	targetNum    int
+	minNumber    int
+	maxNumber    int
+	currentIdx   int
+	mu           sync.Mutex
+	isEven       int
+	sum          int
+	isPrime      int
+	turnTimer    *time.Timer
+	turnDeadline time.Time
 }
 
 type Message struct {
@@ -108,13 +110,35 @@ func getHints(num int) (int, int, int) {
 }
 
 var (
-	waitingPlayer *Player
-	serverFull    bool
-	mu            sync.Mutex
+	waitingPlayer     *Player
+	waitingPlayerTime time.Time
+	serverFull        bool
+	mu                sync.Mutex
+	waitingTimer      *time.Timer
 )
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
+}
+
+func handleWaitingTimeout() {
+	mu.Lock()
+	defer mu.Unlock()
+
+	// Check if there's still a waiting player
+	if waitingPlayer != nil {
+		log.Println("Timeout: No opponent connected within 10 seconds")
+		waitingPlayer.conn.WriteJSON(Message{
+			Type:    "end",
+			Message: "No opponent connected within 10 seconds. You win by default!",
+		})
+		waitingPlayer.conn.Close()
+		waitingPlayer = nil
+
+		// Exit the server after timeout
+		log.Println("Exiting server due to waiting timeout")
+		os.Exit(0)
+	}
 }
 
 func handleGame(w http.ResponseWriter, r *http.Request) {
@@ -135,9 +159,22 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 
 	if waitingPlayer == nil {
 		waitingPlayer = player
+		waitingPlayerTime = time.Now()
+
+		// Set a timeout for the waiting player
+		if waitingTimer != nil {
+			waitingTimer.Stop()
+		}
+		waitingTimer = time.AfterFunc(10*time.Second, handleWaitingTimeout)
+
 		mu.Unlock()
 		conn.WriteJSON(Message{Type: "waiting", Message: "Waiting for another player..."})
 		return
+	}
+
+	// Cancel the timeout since a second player has connected
+	if waitingTimer != nil {
+		waitingTimer.Stop()
 	}
 
 	targetNum := rand.Intn(100) + 1
@@ -175,7 +212,52 @@ func handleGame(w http.ResponseWriter, r *http.Request) {
 	game.run()
 }
 
+func (g *Game) startTurnTimer() {
+	// Cancel any existing timer
+	if g.turnTimer != nil {
+		g.turnTimer.Stop()
+		g.turnTimer = nil
+	}
+
+	// Set a 30-second deadline for the current player's turn
+	g.turnDeadline = time.Now().Add(30 * time.Second)
+	g.turnTimer = time.AfterFunc(30*time.Second, func() {
+		g.handleTurnTimeout()
+	})
+}
+
+func (g *Game) handleTurnTimeout() {
+	g.mu.Lock()
+	defer g.mu.Unlock()
+
+	log.Printf("Turn timeout: Player %d took too long to make a guess", g.currentIdx)
+
+	// The current player loses, the other player wins
+	winnerIdx := 1 - g.currentIdx
+
+	for i, p := range g.players {
+		if p != nil && p.conn != nil {
+			p.conn.WriteJSON(Message{
+				Type: "end",
+				Message: fmt.Sprintf("Game over! Player %d took too long to make a guess. %s",
+					g.currentIdx,
+					map[bool]string{true: "You win!", false: "You lose!"}[i == winnerIdx]),
+			})
+		}
+	}
+
+	g.close()
+	log.Println("Game finished due to turn timeout, exiting server")
+	mu.Lock()
+	serverFull = false
+	mu.Unlock()
+	os.Exit(0)
+}
+
 func (g *Game) run() {
+	// Start the turn timer for the first player
+	g.startTurnTimer()
+
 	for i, player := range g.players {
 		go func(idx int, p *Player) {
 			for {
@@ -195,15 +277,22 @@ func (g *Game) run() {
 
 func (g *Game) handleGuess(playerIdx, guess int) {
 	g.mu.Lock()
-	defer g.mu.Unlock()
 
 	if playerIdx != g.currentIdx {
 		g.players[playerIdx].conn.WriteJSON(Message{Type: "error", Message: "Not your turn"})
+		g.mu.Unlock()
 		return
+	}
+
+	// Cancel the turn timer since the player has made a guess
+	if g.turnTimer != nil {
+		g.turnTimer.Stop()
+		g.turnTimer = nil
 	}
 
 	if guess < g.minNumber || guess > g.maxNumber {
 		g.players[playerIdx].conn.WriteJSON(Message{Type: "error", Message: "Number out of valid range"})
+		g.mu.Unlock()
 		return
 	}
 
@@ -241,6 +330,11 @@ func (g *Game) handleGuess(playerIdx, guess int) {
 			IsPrime: g.isPrime,
 		})
 	}
+
+	// Start the timer for the next player's turn after sending messages
+	g.startTurnTimer()
+
+	g.mu.Unlock()
 }
 
 func (g *Game) handleDisconnect(playerIdx int) {
